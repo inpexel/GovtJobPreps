@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: rgb(28, 28, 28);
+            color: rgb(183, 183, 183);
+        }
+        .question {
+            margin-bottom: 20px;
+        }
+        .ans{
+            cursor: pointer;
+        }
+        p{
+            font-weight: bold;
+        }
+        .btn{
+            background-color: green;
+            color: white;
+            font-size: 22px;
+            border-radius: 5px;
+            outline: none;
+            border: none;
+            padding: 8px 24px;
+            cursor: pointer;
+        }
+        .correct {
+            color: green;
+        }
+        .wrong {
+            color: red;
+        }
+        .submit-button {
+            margin-top: 20px;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+
+        .timer {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background-color: #f8f8f8;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            z-index: 1000; /* Ensures the timer stays on top */
+        }
+        
+        .timer span {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        
+    </style>
+</head>
+<body>
+
+    <h1>Quiz Generator</h1>
+    <textarea id="json-input" rows="20" cols="80" placeholder="Paste your JSON here"></textarea><br>
+    <button class="btn" onclick="generateQuiz()">Generate Quiz</button>
+
+    <form id="quiz-form" style="display:none;">
+        <div id="quiz-container"></div>
+        <button class="btn" type="button" class="submit-button" onclick="checkAnswers()">Submit Answers</button>
+    </form>
+
+    <div id="result-container" class="result"></div>
+
+    <script>
+        let questions = [];
+        let interval; // Global interval for the timer
+        let timerDisplay; // Global timer display element
+
+        function generateQuiz() {
+            const jsonInput = document.getElementById("json-input").value;
+            try {
+                const parsedJson = JSON.parse(jsonInput);
+                questions = parsedJson.questions;
+                const quizContainer = document.getElementById("quiz-container");
+                quizContainer.innerHTML = "";
+                questions.forEach((question, index) => {
+                    const questionDiv = document.createElement("div");
+                    questionDiv.classList.add("question");
+                    questionDiv.innerHTML = `<p>${index + 1}. ${question.question}</p>`;
+                    question.answers.forEach(answer => {
+                        const answerDiv = document.createElement("div");
+                        answerDiv.innerHTML = `<label class="ans"><input type="radio" name="question${index}" value="${answer}"> ${answer}</label>`;
+                        questionDiv.appendChild(answerDiv);
+                    });
+                    quizContainer.appendChild(questionDiv);
+                });
+                document.getElementById("quiz-form").style.display = "block";
+
+                // Start the timer when the quiz is generated
+                startTimer();
+
+            } catch (error) {
+                alert("Invalid JSON format. Please check your input.");
+            }
+        }
+
+        function checkAnswers() {
+            clearInterval(interval); // Stop the timer when answers are submitted
+            let score = 0;
+            questions.forEach((question, index) => {
+                const selectedAnswer = document.querySelector(`input[name="question${index}"]:checked`);
+                const questionDiv = document.querySelectorAll(".question")[index];
+                if (selectedAnswer) {
+                    if (selectedAnswer.value === question.correct_answer) {
+                        score++;
+                        selectedAnswer.parentNode.classList.add("correct");
+                    } else {
+                        selectedAnswer.parentNode.classList.add("wrong");
+                        const correctAnswerElement = document.createElement("p");
+                        correctAnswerElement.classList.add("correct");
+                        correctAnswerElement.innerText = `Correct Answer: ${question.correct_answer}`;
+                        questionDiv.appendChild(correctAnswerElement);
+                    }
+                } else {
+                    const correctAnswerElement = document.createElement("p");
+                    correctAnswerElement.classList.add("correct");
+                    correctAnswerElement.innerText = `Correct Answer: ${question.correct_answer}`;
+                    questionDiv.appendChild(correctAnswerElement);
+                }
+            });
+            document.getElementById("result-container").innerText = `You got ${score} out of ${questions.length} correct!`;
+        }
+
+        function createTimerElement() {
+            // Create the timer div
+            const timerDiv = document.createElement("div");
+            timerDiv.classList.add("timer");
+
+            // Create the timer display
+            timerDisplay = document.createElement("span");
+            timerDisplay.innerText = "00:00";
+
+            // Append the display to the timer div
+            timerDiv.appendChild(timerDisplay);
+
+            // Append the timer div to the body
+            document.body.appendChild(timerDiv);
+        }
+
+        function startTimer() {
+            let seconds = 0;
+            clearInterval(interval); // Clear any existing interval
+            interval = setInterval(() => {
+                seconds++;
+                const minutes = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                timerDisplay.innerText = `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        // Initialize the timer element on page load
+        window.onload = createTimerElement;
+        
+    </script>
+
+</body>
+</html>
